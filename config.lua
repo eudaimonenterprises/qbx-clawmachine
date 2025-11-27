@@ -20,12 +20,17 @@ Config = {
         }
     },
 
-    price = 1
+    price = 20,
+    skillBonus = 20 -- Percentage bonus applied to the prize chance when the skill check is completed
 }
 
 Config.Text = { -- Convert text to your own language
     ['claw_machine'] = 'Claw Machine',
     ['use_claw'] = 'Use Claw Machine $',
     ['grab_toy'] = 'Working Joystick...',
-    ['ate_money'] = 'The machine ate your money...'
+    ['ate_money'] = 'No prize this time.',
+    ['no_funds'] = 'You do not have enough money to play.',
+    ['skill_instructions'] = 'Match the arrow prompts to guide the claw to a prize!',
+    ['skill_fail'] = 'You fumbled the joystick.',
+    ['skill_success'] = 'Perfect alignment!'
 }
