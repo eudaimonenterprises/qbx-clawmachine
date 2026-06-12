@@ -25,7 +25,6 @@ local function PlayClawMiniGame()
     local timer = GetGameTimer()
     local stepNotified = false
 
-    -- Replaced QBCore notify with exports.qbx_core:Notify
     exports.qbx_core:Notify(Config.Text['skill_instructions'], 'primary', 2000)
     
     while currentStep <= #sequence do
@@ -73,34 +72,30 @@ local function StartClawRound(machineId)
         TaskTurnPedToFaceEntity(ped, object, 1500)
     end
     
-    -- Replaced QB progressbar with ox_lib progressbar for better performance and Qbox standards
     if lib.progressBar({
         duration = 2500,
         label = Config.Text['grab_toy'],
         useWhileDead = false,
         canCancel = true,
-        disable = {
-            move = true,
-            carMovement = true,
-            mouse = false,
-            combat = true,
-        },
-        anim = {
-            dict = "anim_casino_a@amb@casino@games@arcadecabinet@maleleft",
-            clip = "insert_coins",
-            flag = 16,
-        },
+        disable = { move = true, carMovement = true, mouse = false, combat = true },
+        anim = { dict = "anim_casino_a@amb@casino@games@arcadecabinet@maleleft", clip = "insert_coins", flag = 16 },
     }) then
         ClearPedTasks(ped)
-        -- Triggering Qbox compatible callback mechanism 
-        exports.qbx_core:TriggerCallback('qbx-clawmachine:canPlay', function(canPlay)
-            if not canPlay then
-                exports.qbx_core:Notify(Config.Text['no_funds'], 'error')
-                return
-            end
-            local miniGameSuccess = PlayClawMiniGame()
-            TriggerServerEvent('qbx-clawmachine:resolveGame', machineId, miniGameSuccess)
-        end, machineId)
+        
+        -- Pulls your newly synchronized HUD cash balance locally
+        local playerData = exports.qbx_core:GetPlayerData()
+        local currentCash = playerData and playerData.money and playerData.money.cash or 0
+        
+        if currentCash < Config.price then
+            exports.qbx_core:Notify(Config.Text['no_funds'], 'error')
+            return
+        end
+        
+        -- Open a secure server session before launching the minigame
+        TriggerServerEvent('qbx-clawmachine:server:startSession', machineId)
+        
+        local miniGameSuccess = PlayClawMiniGame()
+        TriggerServerEvent('qbx-clawmachine:resolveGame', machineId, miniGameSuccess)
     else
         ClearPedTasks(ped)
     end
@@ -108,44 +103,38 @@ end
 
 CreateThread(function()
     local model = `ch_prop_arcade_claw_01a`
-    RequestModel(model)
-    while not HasModelLoaded(model) do
-        Wait(0)
-    end
     
-    -- Replacing qb-target with modern ox_target models (native to Qbox environment)
-    exports.ox_target:removeTargetModel(model, Config.Text['use_claw'])
-    
-    for k, v in pairs(Config.machines) do
-        if DoesObjectOfTypeExistAtCoords(v.location.x, v.location.y, v.location.z, 1.0, model, 0) then
-            local object = GetClosestObjectOfType(v.location.x, v.location.y, v.location.z, 1.0, model)
-            SetEntityAsMissionEntity(object, true, true)
-            Wait(100)
-            DeleteObject(object)
-        end
-        
-        RequestModel(model)
-        if not HasModelLoaded(model) then
-            Wait(10)
-        end
-        
-        local claw = CreateObject(model, v.location.x, v.location.y, v.location.z - 1.0, true, true, false)
-        SetEntityHeading(claw, (v.location.w - 180))
-        FreezeEntityPosition(claw, true)
-        
-        local machineId = k
-        exports.ox_target:addTargetModel(model, {
-            {
-                icon = 'fas fa-coins',
-                label = Config.Text['use_claw']..Config.price,
-                distance = 1.0,
-                onSelect = function(data)
-                    if IsPedAPlayer(data.entity) then return false end
-                    StartClawRound(machineId)
-                end,
-            }
-        })
-    end
+    -- Cleaned Up: Static target mapping model format prevents any texture or MLO conflicts
+    exports.ox_target:addModel(model, {
+        {
+            name = 'claw_machine_interact',
+            icon = 'fas fa-coins',
+            label = Config.Text['use_claw'] .. Config.price,
+            distance = 1.5,
+            -- Pierces addon map collision masks natively to guarantee the eye reads the built-in model
+            canInteract = function(entity, distance, coords, name, bone)
+                local entityCoords = GetEntityCoords(entity)
+                for index, machine in pairs(Config.machines) do
+                    local targetPos = vec3(machine.location.x, machine.location.y, machine.location.z)
+                    if #(entityCoords - targetPos) < 4.0 then
+                        return true
+                    end
+                end
+                return false
+            end,
+            onSelect = function(data)
+                if IsPedAPlayer(data.entity) then return false end
+                local entityCoords = GetEntityCoords(data.entity)
+                for index, machine in pairs(Config.machines) do
+                    local targetPos = vec3(machine.location.x, machine.location.y, machine.location.z)
+                    if #(entityCoords - targetPos) < 4.0 then
+                        StartClawRound(index)
+                        break
+                    end
+                end
+            end,
+        }
+    })
 end)
 
 RegisterNetEvent("qbx-clawmachine:client:animation", function(type)

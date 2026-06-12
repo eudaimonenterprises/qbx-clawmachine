@@ -2,23 +2,32 @@ Config = {}
 
 Config.machines = { -- Add as many claw machines as you want. They are all run off ox_target
     [1] = {
-        location = vector4(116.88, -1568.91, 29.6, 226.96), -- Must be a vector4 to set the heading of the machine. Machine will face the way you are facing
-        prizechance = 50, -- % chance player will get a prize
-        payaccount = "cash", -- Set to "cash" or "bank" depending on what you want the player to pay as
-        prizes = { -- Add as many prizes as you want
+        -- Used strictly to verify which physical machine the player is standing in front of
+        location = vector4(2733.0, -377.96, -48.98, 271.79), 
+        prizechance = 35, -- Base % chance to win a prize per play
+        payaccount = "cash", -- Account used to pay for the game
+        prizes = {
             'funkyplop_harryputter',
+            'funkyplop_dorko',
             'funkyplop_hermoney',
+            'funkyplop_rat',
+            'funkyplop_dumblydope',
+            'funkyplop_hotwing',
+            'funkyplop_haggard',
+            'funkyplop_groaninggertel',
+            'funkyplop_voldoemoord',
+            'funkyplop_snake'
         }
     },
-    [2] = {
-        location = vector4(115.19, -1570.59, 29.6, 230.98), -- Must be a vector4 to set the heading of the machine. Machine will face the way you are facing
-        prizechance = 50, -- % chance player will get a prize
-        payaccount = "cash", -- Set to "cash" or "bank" depending on what you want the player to pay as
-        prizes = { -- Add as many prizes as you want
-            'funkyplop_dorko',
-            'funkyplop_rat',
-        }
-    }
+--    [2] = {
+--        location = vector4(115.19, -1570.59, 29.6, 230.98), -- Must be a vector4 to set the heading of the machine. Machine will face the way you are facing
+--        prizechance = 50, -- % chance player will get a prize
+--        payaccount = "cash", -- Set to "cash" or "bank" depending on what you want the player to pay as
+--        prizes = { -- Add as many prizes as you want
+--            'funkyplop_dorko',
+--            'funkyplop_rat',
+--        }
+--    }
 }
 
 Config.price = 20

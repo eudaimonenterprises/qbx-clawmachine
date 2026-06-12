@@ -6,7 +6,7 @@ description 'A Claw Machine that gives prizes'
 version '1.0.0'
 
 shared_scripts {
-    '@ox_lib/init.lua', -- THIS LINE MOUNTED OX_LIB NATIVELY FOR THE SCRIPT
+    '@ox_lib/init.lua',
     'config.lua'
 }
 
