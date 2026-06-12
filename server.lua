@@ -1,46 +1,46 @@
-local QBCore = exports['qb-core']:GetCoreObject()
-
 local activeSessions = {}
 
 local function GetSessionTime()
     return os.time() * 1000
 end
 
-QBCore.Functions.CreateCallback('qb-clawmachine:canPlay', function(source, cb, machineIndex)
-    local Player = QBCore.Functions.GetPlayer(source)
+-- Replaced QBCore callback with ox_lib's server callback registration
+lib.callback.register('qbx-clawmachine:canPlay', function(source, machineIndex)
+    -- Replaced QBCore GetPlayer with Qbox native PlayerData retrieval
+    local Player = exports.qbx_core:GetPlayer(source)
     local machine = Config.machines[machineIndex]
 
     if not Player or not machine then
-        cb(false)
-        return
+        return false
     end
 
-    local paid = Player.Functions.RemoveMoney(machine.payaccount, Config.price, 'claw_machine')
+    -- Replaced legacy function with qbx_core:RemoveMoney
+    local paid = exports.qbx_core:RemoveMoney(source, machine.payaccount, Config.price, 'claw_machine')
 
     if not paid then
-        TriggerClientEvent("QBCore:Notify", source, Config.Text['no_funds'], 'error')
-        cb(false)
-        return
+        -- Replaced QBCore:Notify client trigger with Qbox native server notify
+        exports.qbx_core:Notify(source, Config.Text['no_funds'], 'error')
+        return false
     end
 
     activeSessions[source] = { machineId = machineIndex, expires = GetSessionTime() + 60000 }
-    cb(true)
+    return true
 end)
 
-RegisterNetEvent('qb-clawmachine:resolveGame', function(machineIndex, skillSuccess)
+RegisterNetEvent('qbx-clawmachine:resolveGame', function(machineIndex, skillSuccess)
     local src = source
-    local Player = QBCore.Functions.GetPlayer(src)
+    local Player = exports.qbx_core:GetPlayer(src)
     local machine = Config.machines[machineIndex]
     local session = activeSessions[src]
 
     if not Player or not machine or not session or session.machineId ~= machineIndex then
-        TriggerClientEvent("QBCore:Notify", src, Config.Text['ate_money'], 'error')
+        exports.qbx_core:Notify(src, Config.Text['ate_money'], 'error')
         return
     end
 
     if session.expires < GetSessionTime() then
         activeSessions[src] = nil
-        TriggerClientEvent("QBCore:Notify", src, Config.Text['ate_money'], 'error')
+        exports.qbx_core:Notify(src, Config.Text['ate_money'], 'error')
         return
     end
 
@@ -58,11 +58,18 @@ RegisterNetEvent('qb-clawmachine:resolveGame', function(machineIndex, skillSucce
 
     if adjustedChance >= prizeChance then
         local prizeItem = machine.prizes[randomToy]
-        Player.Functions.AddItem(prizeItem, 1)
-        TriggerClientEvent('inventory:client:ItemBox', src, QBCore.Shared.Items[prizeItem], 'add')
-        TriggerClientEvent("qb-clawmachine:client:animation", src, "win")
+        
+        -- Native ox_inventory item handling check and implementation
+        if exports.ox_inventory:CanCarryItem(src, prizeItem, 1) then
+            exports.ox_inventory:AddItem(src, prizeItem, 1)
+            TriggerClientEvent("qbx-clawmachine:client:animation", src, "win")
+        else
+            -- Notifies the player if they don't have enough pocket space for the prize
+            exports.qbx_core:Notify(src, "You don't have enough space in your inventory!", 'error')
+            TriggerClientEvent("qbx-clawmachine:client:animation", src, "lose")
+        end
     else
-        TriggerClientEvent("QBCore:Notify", src, Config.Text['ate_money'], 'error')
-        TriggerClientEvent("qb-clawmachine:client:animation", src, "lose")
+        exports.qbx_core:Notify(src, Config.Text['ate_money'], 'error')
+        TriggerClientEvent("qbx-clawmachine:client:animation", src, "lose")
     end
 end)
