@@ -104,7 +104,7 @@ You can add as many machines with unique prizes in each machine. Below is a list
     close = false,
     description = "A greasy-haired pimp rocking a deep V-neck shirt and an obnoxious gold chain. His black cane completes the pair of pipes that ran through the entire city.",
     client = {
-        image = 'funkyplop_trousersnake.png'
+        image = 'funkyplop_snake.png'
     }
 }
 ```
